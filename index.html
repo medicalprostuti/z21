@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>যুলোজি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "স্বাভাবিক অবস্থায় হৃৎপিণ্ডের পেসমেকার কোনটি?",
+          options: {
+            a: "Bundle of His",
+            b: "SA node",
+            c: "AV node",
+            d: "Purkinje fiber",
+          },
+          correct: "b",
+          explanation:
+            "<p>স্বাভাবিক অবস্থায় হৃৎপিণ্ডের পেসমেকার হলো <strong>SA node</strong> (Sinoatrial node) বা সাইনোঅ্যাট্রিয়াল নোড। এটি হৃৎপিণ্ডের ছন্দবদ্ধ সংকোচন শুরু করে এবং সমগ্র হৃৎপিণ্ডে বৈদ্যুতিক উদ্দীপনা ছড়িয়ে দেয়, যা হৃৎস্পন্দন তৈরি করে।</p>",
+        },
+        {
+          id: 2,
+          question: "পেসমেকারের অবস্থান হৃৎপিণ্ডের কোথায়?",
+          options: {
+            a: "বাম অলিন্দ",
+            b: "বাম নিলয়",
+            c: "ডান অলিন্দ",
+            d: "ডান নিলয়",
+          },
+          correct: "c",
+          explanation:
+            "<p>পেসমেকার বা <strong>SA node</strong> হৃৎপিণ্ডের <strong>ডান অলিন্দে</strong> (Right atrium) অবস্থিত। এটি ঊর্ধ্ব মহাশিরার (Superior Vena Cava) প্রবেশ মুখের কাছে অবস্থিত থাকে।</p>",
+        },
+        {
+          id: 3,
+          question: "অলিন্দের ডায়াস্টোল দশার সময়কাল কোনটি?",
+          options: {
+            a: "0.5 s",
+            b: "0.3 s",
+            c: "0.7 s",
+            d: "0.1 s",
+          },
+          correct: "c",
+          explanation:
+            "<p>একটি সম্পূর্ণ কার্ডিয়াক চক্রের সময়কাল ০.৮ সেকেন্ড। এর মধ্যে অলিন্দের ডায়াস্টোল (Atrial diastole) দশার সময়কাল হলো <strong>০.৭ সেকেন্ড</strong>। এই সময়ে অলিন্দগুলো রক্তে পূর্ণ হয়।</p>",
+        },
+        {
+          id: 4,
+          question: "নিলয়ের ডায়াস্টোলের সময় নিম্নের কত সেকেন্ড?",
+          options: {
+            a: "0.5 s",
+            b: "0.7 s",
+            c: "0.1 s",
+            d: "0.3 s",
+          },
+          correct: "a",
+          explanation:
+            "<p>নিলয়ের ডায়াস্টোলের (Ventricular diastole) সময়কাল হলো <strong>০.৫ সেকেন্ড</strong>। এই সময়ে নিলয়গুলো প্রসারিত হয় এবং অলিন্দ থেকে রক্ত গ্রহণ করে।</p>",
+        },
+        {
+          id: 5,
+          question: "সিস্টোলিক এবং ডায়াস্টোলিক প্রেসারের পার্থক্যকে বলা হয়-",
+          options: {
+            a: "বেসাল প্রেসার",
+            b: "পরিস্রাবণ প্রেসার",
+            c: "পালস প্রেসার",
+            d: "মিন প্রেসার",
+          },
+          correct: "c",
+          explanation:
+            "<p>সিস্টোলিক (Systolic) এবং ডায়াস্টোলিক (Diastolic) প্রেসারের পার্থক্যকে <strong>পালস প্রেসার</strong> (Pulse Pressure) বলা হয়। এটি রক্তনালীর স্থিতিস্থাপকতা এবং হৃদপিণ্ডের কার্যকারিতার একটি নির্দেশক।</p>",
+        },
+        {
+          id: 6,
+          question: "নিম্নের কোনটি সঠিক নয়?",
+          options: {
+            a: "লসিকা দেহের কিছু কিছু স্থানে রক্তের পরিবর্তন হিসেবে কাজ করে",
+            b: "শিরায় রক্তচাপ কম থাকে",
+            c: "কার্ডিয়াক চক্রের সময়কাল, হৃৎপিণ্ডের স্পন্দনের সমানুপাতিক",
+            d: "কৈশিক জালক থেকে শিরার উৎপত্তি",
+          },
+          correct: "c",
+          explanation:
+            "<p><strong>কার্ডিয়াক চক্রের সময়কাল, হৃৎপিণ্ডের স্পন্দনের সমানুপাতিক</strong> - এই তথ্যটি সঠিক নয়। প্রকৃতপক্ষে, কার্ডিয়াক চক্রের সময়কাল হৃৎপিণ্ডের স্পন্দনের <strong>ব্যস্তানুপাতিক</strong>। অর্থাৎ, হৃৎস্পন্দন যত বাড়ে, একটি চক্রের সময়কাল তত কমে।</p>",
+        },
+        {
+          id: 7,
+          question: "নিম্নের কোনটি হৃৎপিণ্ডের সংবহন তন্ত্রের অংশ নয়?",
+          options: {
+            a: "পেসমেকার",
+            b: "মায়োকার্ডিয়াম",
+            c: "বান্ডল অব হিজ",
+            d: "পারকিনজি তন্তু",
+          },
+          correct: "b",
+          explanation:
+            "<p><strong>মায়োকার্ডিয়াম</strong> (Myocardium) হলো হৃৎপিণ্ডের পেশী স্তর, যা হৃৎপিণ্ডের সংকোচন-প্রসারণে সক্রিয় ভূমিকা পালন করে। এটি হৃৎপিণ্ডের বৈদ্যুতিক সংবহন তন্ত্রের (Electrical conduction system) সরাসরি অংশ নয়। পেসমেকার (SA node), বান্ডল অব হিজ (Bundle of His), এবং পারকিনজি তন্তু (Purkinje fiber) হৃৎপিণ্ডের বৈদ্যুতিক উদ্দীপনা সঞ্চালনের পথ তৈরি করে।</p>",
+        },
+        {
+          id: 8,
+          question: "SAN কোন কপাটিকার পিছনে অবস্থিত?",
+          options: {
+            a: "সেমিলুনার কপাটিকা",
+            b: "বাইকাসপিড কপাটিকা",
+            c: "ট্রাইকাসপিড কপাটিকা",
+            d: "ইউস্টেশিয়ান কপাটিকা",
+          },
+          correct: "c",
+          explanation:
+            "<p>SAN (Sinoatrial node) <strong>ট্রাইকাসপিড কপাটিকা</strong>র (Tricuspid valve) পিছনে, ডান অলিন্দের ঊর্ধ্ব মহাশিরার প্রবেশ মুখের কাছে অবস্থিত। তবে এটি সরাসরি ট্রাইকাসপিড কপাটিকার পিছনে নয়, বরং ডান অলিন্দেই এর অবস্থান। সম্ভবত প্রশ্নে 'ট্রাইকাসপিড কপাটিকা' বলতে ডান অলিন্দের সাধারণ অবস্থানকে বোঝানো হয়েছে।</p>",
+        },
+        {
+          id: 9,
+          question: "নিচের কোন ক্রমটি সঠিক?",
+          options: {
+            a: "SAN → AVN → পারকিনজি তন্তু → বান্ডল অব হিজ",
+            b: "SAN → AVN → বান্ডল অব হিজ → পারকিনজি তন্তু",
+            c: "SAN → পারকিনজি তন্তু → AVN → বান্ডল অব হিজ",
+            d: "SAN → পারকিনজি তন্তু → AVN → বান্ডল অব হিজ",
+          },
+          correct: "b",
+          explanation:
+            "<p>হৃৎপিণ্ডের বৈদ্যুতিক উদ্দীপনা সঞ্চালনের সঠিক ক্রম হলো: <strong>SAN (Sinoatrial node) → AVN (Atrioventricular node) → বান্ডল অব হিজ (Bundle of His) → পারকিনজি তন্তু (Purkinje fiber)</strong>। এই ক্রমেই বৈদ্যুতিক সংকেত হৃৎপিণ্ডের বিভিন্ন অংশে ছড়িয়ে পড়ে এবং ছন্দবদ্ধ সংকোচন ঘটায়।</p>",
+        },
+        {
+          id: 10,
+          question:
+            "নিচের কোনটির মাধ্যমে হৃৎউদ্দীপনা সবচেয়ে দ্রুত সঞ্চারিত হয়?",
+          options: {
+            a: "SAN",
+            b: "AVN",
+            c: "বান্ডল অব হিজ",
+            d: "পারকিনজি ফাইবার",
+          },
+          correct: "d",
+          explanation:
+            "<p>হৃৎউদ্দীপনা <strong>পারকিনজি ফাইবার</strong> (Purkinje fiber) এর মাধ্যমে সবচেয়ে দ্রুত সঞ্চারিত হয়। এটি নিলয় জুড়ে দ্রুত উদ্দীপনা ছড়িয়ে দেয়, যা নিলয়ের দক্ষ সংকোচনের জন্য অপরিহার্য।</p>",
+        },
+        {
+          id: 11,
+          question: "কার্ডিয়াক চক্রের কোন দশার সময়কাল ০.১ সেকেন্ড?",
+          options: {
+            a: "অলিন্দের সিস্টোল",
+            b: "অলিন্দের ডায়াস্টোল",
+            c: "নিলয়ের সিস্টোল",
+            d: "নিলয়ের ডায়াস্টোল",
+          },
+          correct: "a",
+          explanation:
+            "<p>কার্ডিয়াক চক্রের <strong>অলিন্দের সিস্টোল</strong> (Atrial systole) দশার সময়কাল হলো <strong>০.১ সেকেন্ড</strong>। এই সংক্ষিপ্ত সময়ে অলিন্দগুলো সংকুচিত হয় এবং নিলয়গুলোকে রক্ত দ্বারা পূর্ণ করে।</p>",
+        },
+        {
+          id: 12,
+          question: "SAN এর ক্ষেত্রে কোনটি প্রযোজ্য?",
+          options: {
+            a: "এটি বাম অ্যাট্রিয়ামে অবস্থিত",
+            b: "সৃষ্ট তরঙ্গের গতিপথ; SAN → পারকিনজি তন্তু → বান্ডল অব হিজ",
+            c: "এটি হৃৎচক্র নিয়ন্ত্রণ করে না",
+            d: "এটিকে পেসমেকার বলে",
+          },
+          correct: "d",
+          explanation:
+            "<p><strong>SAN (Sinoatrial node) কে পেসমেকার বলে</strong>। এটি হৃৎপিণ্ডের প্রাকৃতিক পেসমেকার, যা স্বয়ংক্রিয়ভাবে বৈদ্যুতিক উদ্দীপনা তৈরি করে এবং হৃৎস্পন্দনের ছন্দ নিয়ন্ত্রণ করে।</p>",
+        },
+        {
+          id: 13,
+          question: "মানুষের হৃৎপিণ্ডে ভেন্ট্রিকলের সিস্টোল হলে নিচের কী ঘটবে?",
+          options: {
+            a: "সেমিলুনার কপাটিকা খুলে যাবে",
+            b: "বাইকাসপিড কপাটিকা খুলে যাবে",
+            c: "সেমিলুনার কপাটিকা বন্ধ হবে",
+            d: "ট্রাইকাসপিড কপাটিকা খুলে যাবে",
+          },
+          correct: "a",
+          explanation:
+            "<p>মানুষের হৃৎপিণ্ডে ভেন্ট্রিকলের সিস্টোল (Ventricular systole) হলে, অর্থাৎ নিলয়গুলো সংকুচিত হলে, <strong>সেমিলুনার কপাটিকা</strong> (Semilunar valves - অ্যাওর্টিক ও পালমোনারি কপাটিকা) <strong>খুলে যাবে</strong>। এর ফলে রক্ত নিলয় থেকে মহাধমনি ও পালমোনারি ধমনীতে প্রবেশ করবে। একই সময়ে বাইকাসপিড ও ট্রাইকাসপিড কপাটিকা বন্ধ হয়ে যাবে।</p>",
+        },
+        {
+          id: 14,
+          question: "AVN এ উদ্দীপনা কত সেকেন্ড স্থায়ী থাকে?",
+          options: {
+            a: "0.3",
+            b: "0.03",
+            c: "0.09",
+            d: "0.16",
+          },
+          correct: "c",
+          explanation:
+            "<p>AVN (Atrioventricular node) এ উদ্দীপনা প্রায় <strong>০.০৯ সেকেন্ড</strong> (বা ৯০ মিলিসেকেন্ড) স্থায়ী থাকে। এই বিলম্ব অলিন্দ থেকে নিলয়ে রক্ত সম্পূর্ণরূপে প্রবাহিত হওয়ার জন্য পর্যাপ্ত সময় দেয়।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "মানব হৃৎপিণ্ডের কোন স্থানে সাইনো-অ্যাট্রিয়াল নোড অবস্থিত?",
+          options: {
+            a: "ডান অলিন্দে",
+            b: "বাম অলিন্দে",
+            c: "ডান নিলয়ে",
+            d: "বাম নিলয়ে",
+          },
+          correct: "a",
+          explanation:
+            "<p>মানব হৃৎপিণ্ডের <strong>ডান অলিন্দে</strong> (Right Atrium) সাইনো-অ্যাট্রিয়াল নোড (Sinoatrial node) অবস্থিত। এটি হৃৎপিণ্ডের প্রাকৃতিক পেসমেকার হিসেবে কাজ করে।</p>",
+        },
+        {
+          id: 16,
+          question: "কোনটিকে পেসমেকার বলা হয়?",
+          options: {
+            a: "অ্যাট্রিও-ভেন্টিকুলার নোডকে",
+            b: "পার্কিনজি তন্তুকে",
+            c: "সাইনো-অ্যাট্রিয়াল নোডকে",
+            d: "বান্ডল অফ হিজকে",
+          },
+          correct: "c",
+          explanation:
+            "<p><strong>সাইনো-অ্যাট্রিয়াল নোডকে</strong> (Sinoatrial node) পেসমেকার বলা হয়। এটি স্বয়ংক্রিয়ভাবে বৈদ্যুতিক উদ্দীপনা তৈরি করে হৃৎপিণ্ডের ছন্দময় সংকোচন শুরু করে।</p>",
+        },
+        {
+          id: 17,
+          question: "হৃদচক্রের কোন পর্যায়ে প্রথম হৃদ শব্দ সৃষ্টি হয়?",
+          options: {
+            a: "অ্যাট্রিয়ামের ডায়াস্টোল",
+            b: "ভেন্ট্রিকলের সিস্টোল",
+            c: "অ্যাট্রিয়ামের সিস্টোল",
+            d: "ভেন্ট্রিকলের ডায়াস্টোল",
+          },
+          correct: "b",
+          explanation:
+            "<p>হৃদচক্রের <strong>ভেন্ট্রিকলের সিস্টোল</strong> (Ventricular systole) পর্যায়ে প্রথম হৃদ শব্দ ('লুব') সৃষ্টি হয়। এটি অ্যাট্রিওভেন্ট্রিকুলার কপাটিকাগুলো (ট্রাইকাসপিড ও বাইকাসপিড) বন্ধ হওয়ার কারণে ঘটে।</p>",
+        },
+        {
+          id: 18,
+          question: "কার্ডিয়াক চক্রের কোন দশাটি তুলনামূলকভাবে বেশি?",
+          options: {
+            a: "অলিন্দের সিস্টোল",
+            b: "অলিন্দের ডায়াস্টোল",
+            c: "নিলয়ের সিস্টোল",
+            d: "নিলয়ের ডায়াস্টোল",
+          },
+          correct: "b",
+          explanation:
+            "<p>একটি কার্ডিয়াক চক্রের মোট সময়কাল ০.৮ সেকেন্ড। এর মধ্যে <strong>অলিন্দের ডায়াস্টোল</strong> (Atrial diastole) দশার সময়কাল ০.৭ সেকেন্ড, যা অন্য দশাগুলোর (অলিন্দের সিস্টোল ০.১ সেকেন্ড, নিলয়ের সিস্টোল ০.৩ সেকেন্ড, নিলয়ের ডায়াস্টোল ০.৫ সেকেন্ড) চেয়ে তুলনামূলকভাবে বেশি।</p>",
+        },
+        {
+          id: 19,
+          question: "SAN থেকে AVN এ হৃৎউদ্দীপনা পৌঁছাতে সময় লাগে কত সেকেন্ড?",
+          options: {
+            a: "0.05",
+            b: "0.03",
+            c: "0.09",
+            d: "0.15",
+          },
+          correct: "d",
+          explanation:
+            "<p>SAN থেকে AVN এ হৃৎউদ্দীপনা পৌঁছাতে প্রায় <strong>০.১৫ সেকেন্ড</strong> সময় লাগে। এই সময়কালে উদ্দীপনা অ্যাট্রিয়াল ফাইবার (Internodal pathways) দিয়ে AVN এর দিকে প্রবাহিত হয়।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                  <label class="option" data-option="${option}">
+                    <div class="circle">${option}</div>
+                    <span class="option-text">${question.options[option]}</span>
+                  </label>
+                `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                     <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                     <div class="explanation-content">
+                       <div class="explanation-label">ব্যাখ্যা:</div>
+                       ${question.explanation}
+                     </div>
+                   </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                <p class="question-label">${index + 1}. ${question.question}</p>
+                <div class="options">
+                  ${optionsHTML}
+                </div>
+                ${explanationHTML}
+              `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
